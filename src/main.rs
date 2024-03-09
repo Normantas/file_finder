@@ -37,8 +37,8 @@ fn main() {
     // Make a channel in which entries which match will be sent into for writing to stdout
     let (tx, rx) = crossbeam_channel::unbounded::<DirEntry>();
 
-    let _stdout_thread = std::thread::spawn(move || {
-        let mut stdout = std::io::BufWriter::new(std::io::stdout());
+    let mut stdout = std::io::BufWriter::new(std::io::stdout());
+    let stdout_thread = std::thread::spawn(move || {
         for dent in rx {
             stdout
                 .write_all(&Vec::from_path_lossy(dent.path()))
@@ -70,4 +70,7 @@ fn main() {
             Continue
         })
     });
+
+    drop(tx);
+    stdout_thread.join().unwrap();
 }
