@@ -43,4 +43,4 @@ sys     0m0.519s
 ```
 
 # Current issues
-When running with the --i flag, sometimes it doesnt find the desired file/directory even if it exists
+When running with the -i flag, sometimes it doesnt find the desired file/directory even if it exists
