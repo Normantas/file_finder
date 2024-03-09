@@ -1,0 +1,15 @@
+[package]
+name = "file_finder"
+version = "0.1.0"
+edition = "2021"
+
+[profile.release]
+codegen-units = 1
+lto = "fat"
+
+[dependencies]
+bstr = "1.9.1"
+clap = { version = "4.5.2", features = ["derive"] }
+crossbeam-channel = "0.5.12"
+ignore = { version = "0.4.22", features = ["simd-accel"] }
+wildmatch = "2.3.0"
