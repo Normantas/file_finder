@@ -2,7 +2,7 @@ use std::io::Write;
 
 use clap::{Parser, ValueHint};
 use bstr::ByteVec;
-use wildmatch::WildMatch;
+use wildflower::Pattern;
 use ignore::{WalkBuilder, DirEntry};
 
 #[derive(Parser, Debug, Clone)]
@@ -47,13 +47,12 @@ fn main() {
 
     // Search the files
     let walker = WalkBuilder::new(args.directory).threads(args.threads).ignore(false).hidden(!args.include_hidden).max_depth(args.max_depth).build_parallel();
+    let matcher = &Pattern::new(&args.file_name);
     walker.run(|| {
         let tx = tx.clone();
-        let filename = &args.file_name;
         Box::new(move |result| {
             use ignore::WalkState::*;
 
-            let matcher = WildMatch::new(filename);
             if let Ok(entry) = result {
                 if let Some(file_name) = entry.file_name().to_str() {
                     if matcher.matches(file_name) {
