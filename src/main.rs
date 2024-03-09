@@ -26,7 +26,7 @@ struct Args {
     max_depth: Option<usize>,
 
     /// Should hidden files also be searched?
-    #[arg(short = 'H', long, default_value_t = false)]
+    #[arg(short = 'i', long, default_value_t = false)]
     include_hidden: bool,
 }
 
