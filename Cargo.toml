@@ -2,6 +2,7 @@
 name = "file_finder"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
 
 [profile.release]
 codegen-units = 1
