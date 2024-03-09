@@ -1,9 +1,9 @@
 use std::io::Write;
 
-use clap::{Parser, ValueHint};
 use bstr::ByteVec;
+use clap::{Parser, ValueHint};
+use ignore::{DirEntry, WalkBuilder};
 use wildflower::Pattern;
-use ignore::{WalkBuilder, DirEntry};
 
 #[derive(Parser, Debug, Clone)]
 #[command(version, about, long_about = None)]
@@ -40,18 +40,25 @@ fn main() {
     let _stdout_thread = std::thread::spawn(move || {
         let mut stdout = std::io::BufWriter::new(std::io::stdout());
         for dent in rx {
-            stdout.write(&*Vec::from_path_lossy(dent.path())).unwrap();
-            stdout.write(b"\n").unwrap();
+            stdout
+                .write_all(&Vec::from_path_lossy(dent.path()))
+                .unwrap();
+            stdout.write_all(b"\n").unwrap();
         }
     });
 
     // Search the files
-    let walker = WalkBuilder::new(args.directory).threads(args.threads).ignore(false).hidden(!args.include_hidden).max_depth(args.max_depth).build_parallel();
+    let walker = WalkBuilder::new(args.directory)
+        .threads(args.threads)
+        .ignore(false)
+        .hidden(!args.include_hidden)
+        .max_depth(args.max_depth)
+        .build_parallel();
     let matcher = &Pattern::new(&args.file_name);
     walker.run(|| {
         let tx = tx.clone();
         Box::new(move |result| {
-            use ignore::WalkState::*;
+            use ignore::WalkState::Continue;
 
             if let Ok(entry) = result {
                 if let Some(file_name) = entry.file_name().to_str() {
