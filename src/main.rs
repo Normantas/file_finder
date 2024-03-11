@@ -38,14 +38,14 @@ fn main() {
     let matcher = Pattern::new(args.file_name);
     let mut stdout = std::io::BufWriter::new(std::io::stdout());
 
-        for entry in walker
-            .into_iter()
-            .filter_map(|e| e.ok())
-            .filter(|e| matcher.matches(&e.file_name.to_string_lossy()))
-        {
-            stdout
-                .write_all(&Vec::from_path_lossy(&entry.path()))
-                .unwrap();
-            stdout.write_all(b"\n").unwrap();
-        }
+    for entry in walker
+        .into_iter()
+        .filter_map(Result::ok)
+        .filter(|e| matcher.matches(&e.file_name.to_string_lossy()))
+    {
+        stdout
+            .write_all(&Vec::from_path_lossy(&entry.path()))
+            .unwrap();
+        stdout.write_all(b"\n").unwrap();
+    }
 }
