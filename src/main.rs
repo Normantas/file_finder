@@ -2,7 +2,7 @@ use std::io::Write;
 
 use bstr::ByteVec;
 use clap::{Parser, ValueHint};
-use ignore::{DirEntry, WalkBuilder};
+use jwalk::WalkDir;
 use wildflower::Pattern;
 
 #[derive(Parser, Debug, Clone)]
@@ -34,43 +34,27 @@ fn main() {
     // Parse CLI arguments
     let args = Args::parse();
 
-    // Make a channel in which entries which match will be sent into for writing to stdout
-    let (tx, rx) = crossbeam_channel::unbounded::<DirEntry>();
+    // Search the files
+    let walker = WalkDir::new(args.directory);
+    let matcher = Pattern::new(args.file_name);
+
+    let walk_dir = walker
+        .process_read_dir(move |_depth, _path, _read_dir_state, children| {
+        children.retain(|dir_entry_result| {
+            dir_entry_result.as_ref().map(|dir_entry| {
+                dir_entry.file_name
+                    .to_str()
+                    .map(|s| matcher.matches(s))
+                    .unwrap_or(false)
+            }).unwrap_or(false)
+        });
+    });
 
     let mut stdout = std::io::BufWriter::new(std::io::stdout());
-    let stdout_thread = std::thread::spawn(move || {
-        for dent in rx {
-            stdout
-                .write_all(&Vec::from_path_lossy(dent.path()))
-                .unwrap();
-            stdout.write_all(b"\n").unwrap();
-        }
-    });
-
-    // Search the files
-    let walker = WalkBuilder::new(args.directory)
-        .threads(args.threads)
-        .ignore(false)
-        .hidden(!args.include_hidden)
-        .max_depth(args.max_depth)
-        .build_parallel();
-    let matcher = &Pattern::new(&args.file_name);
-    walker.run(|| {
-        let tx = tx.clone();
-        Box::new(move |result| {
-            use ignore::WalkState::Continue;
-
-            if let Ok(entry) = result {
-                if let Some(file_name) = entry.file_name().to_str() {
-                    if matcher.matches(file_name) {
-                        tx.send(entry).unwrap();
-                    }
-                }
-            }
-            Continue
-        })
-    });
-
-    drop(tx);
-    stdout_thread.join().unwrap();
+    for entry in walk_dir.into_iter().filter_map(|e| e.ok()) {
+        stdout
+            .write_all(&Vec::from_path_lossy(&entry.path()))
+            .unwrap();
+        stdout.write_all(b"\n").unwrap();
+    }
 }
