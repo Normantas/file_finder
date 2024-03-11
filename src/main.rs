@@ -17,10 +17,6 @@ struct Args {
     #[arg(value_hint(ValueHint::DirPath), default_value_t = String::from("./"), index = 2)]
     directory: String,
 
-    /// How many threads should be used for searching. Setting it to 0 will automatically choose it for you.
-    #[arg(short, long, default_value_t = 0)]
-    threads: usize,
-
     /// How deep should the search go.
     #[arg(short = 'd', long)]
     max_depth: Option<usize>,
@@ -34,27 +30,22 @@ fn main() {
     // Parse CLI arguments
     let args = Args::parse();
 
-    // Search the files
-    let walker = WalkDir::new(args.directory);
+    // Walk the directories
+    let walker = WalkDir::new(args.directory)
+        .skip_hidden(!args.include_hidden)
+        .follow_links(false)
+        .max_depth(args.max_depth.unwrap_or(usize::MAX));
     let matcher = Pattern::new(args.file_name);
-
-    let walk_dir = walker
-        .process_read_dir(move |_depth, _path, _read_dir_state, children| {
-        children.retain(|dir_entry_result| {
-            dir_entry_result.as_ref().map(|dir_entry| {
-                dir_entry.file_name
-                    .to_str()
-                    .map(|s| matcher.matches(s))
-                    .unwrap_or(false)
-            }).unwrap_or(false)
-        });
-    });
-
     let mut stdout = std::io::BufWriter::new(std::io::stdout());
-    for entry in walk_dir.into_iter().filter_map(|e| e.ok()) {
-        stdout
-            .write_all(&Vec::from_path_lossy(&entry.path()))
-            .unwrap();
-        stdout.write_all(b"\n").unwrap();
-    }
+
+        for entry in walker
+            .into_iter()
+            .filter_map(|e| e.ok())
+            .filter(|e| matcher.matches(&e.file_name.to_string_lossy()))
+        {
+            stdout
+                .write_all(&Vec::from_path_lossy(&entry.path()))
+                .unwrap();
+            stdout.write_all(b"\n").unwrap();
+        }
 }
