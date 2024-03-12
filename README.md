@@ -1,3 +1,4 @@
+## Note: this project is discontinued!
 # File Finder
 ### A "file finding" utility
 To build from source and include native optimizations (specific to your CPU), do: ```RUSTFLAGS="-C target-cpu=native" cargo build --release```
