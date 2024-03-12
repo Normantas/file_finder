@@ -1,4 +1,4 @@
-use std::io::Write;
+use std::{io::Write, path::PathBuf};
 
 use bstr::ByteVec;
 use clap::{Parser, ValueHint};
@@ -30,22 +30,33 @@ fn main() {
     // Parse CLI arguments
     let args = Args::parse();
 
+    let (tx, rx) = crossbeam_channel::unbounded::<PathBuf>();
+
+    let mut stdout = std::io::BufWriter::new(std::io::stdout());
+    let stdout_thread = std::thread::spawn(move || {
+        for dent in rx {
+            stdout
+                .write_all(&Vec::from_path_lossy(&dent))
+                .unwrap();
+            stdout.write_all(b"\n").unwrap();
+        }
+    });
+
     // Walk the directories
     let walker = WalkDir::new(args.directory)
         .skip_hidden(!args.include_hidden)
         .follow_links(false)
         .max_depth(args.max_depth.unwrap_or(usize::MAX));
     let matcher = Pattern::new(args.file_name);
-    let mut stdout = std::io::BufWriter::new(std::io::stdout());
 
     for entry in walker
         .into_iter()
         .filter_map(Result::ok)
         .filter(|e| matcher.matches(&e.file_name.to_string_lossy()))
     {
-        stdout
-            .write_all(&Vec::from_path_lossy(&entry.path()))
-            .unwrap();
-        stdout.write_all(b"\n").unwrap();
+        tx.send(entry.path()).unwrap();
     }
+
+    drop(tx);
+    stdout_thread.join().unwrap();
 }

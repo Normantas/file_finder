@@ -2,7 +2,7 @@
 ### A "file finding" utility
 To build from source and include native optimizations (specific to your CPU), do: ```RUSTFLAGS="-C target-cpu=native" cargo build --release```
 
-# Benchmark
+# Benchmark (Note: outdated, this was done on ff version 0.3.2)
 ## On the *root* directory
 ### Printing out *root* directory
 `ff` is faster by 13.121s

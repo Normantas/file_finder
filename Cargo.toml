@@ -1,6 +1,6 @@
 [package]
 name = "ff"
-version = "0.3.2"
+version = "0.3.3"
 edition = "2021"
 license = "MIT"
 
@@ -11,5 +11,6 @@ lto = "fat"
 [dependencies]
 bstr = "1.9.1"
 clap = { version = "4.5.2", features = ["derive"] }
+crossbeam-channel = "0.5.12"
 jwalk = "0.8.1"
 wildflower = "0.3.0"

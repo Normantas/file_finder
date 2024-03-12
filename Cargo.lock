@@ -171,10 +171,11 @@ checksum = "11157ac094ffbdde99aa67b23417ebdd801842852b500e395a45a9c0aac03e4a"
 
 [[package]]
 name = "ff"
-version = "0.3.2"
+version = "0.3.3"
 dependencies = [
  "bstr",
  "clap",
+ "crossbeam-channel",
  "jwalk",
  "wildflower",
 ]
